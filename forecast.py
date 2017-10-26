@@ -45,7 +45,7 @@ class ses:
         self.time=y.index
         self.y=y.as_matrix()
         self.n=len(self.y)
-    
+
     def smooth(self):
         return exponentialsmoothing(self.y, self.alpha)
 
@@ -57,8 +57,8 @@ class ses:
         return (1/2)*np.log(self.mse(alpha))
 
     def fit(self, start=0.1):
-        result=minimize(self.loss, start, bounds=((0,1),), tol=1e-6, method='L-BFGS-B')   
-        self.alpha=float(result.x)       
+        result=minimize(self.loss, start, bounds=((0,1),), tol=1e-6, method='L-BFGS-B')
+        self.alpha=float(result.x)
         self.sigma2=self.mse(self.alpha)
         self.se=np.sqrt(np.diag((1/self.n)*result.hess_inv.todense()))
         self.fitted=self.smooth()
@@ -93,7 +93,7 @@ class ses:
         print(' MSE               {0:.3f}'.format(mse))
         if loglik>0:
             print(' Log-likelihood    {0:.3f}'.format(loglik))
-        else: 
+        else:
             print(' Log-likelihood   {0:.3f}'.format(loglik))
         print(' AIC               {0:.3f}'.format(aic))
         print(' BIC               {0:.3f}'.format(bic))
@@ -120,7 +120,7 @@ class holt:
         self.y=y.as_matrix()
         self.n=len(self.y)
         self.damped=damped
-    
+
     def smooth(self):
         if self.damped:
             l, b =holtsmooth(self.y, self.alpha, self.beta, self.phi)
@@ -141,11 +141,11 @@ class holt:
 
     def fit(self, start=np.array([0.3,0.05])):
         if self.damped==False:
-            result=minimize(self.loss, start,  bounds=((0,1),(0,1)), tol=1e-6, method='L-BFGS-B') 
+            result=minimize(self.loss, start,  bounds=((0,1),(0,1)), tol=1e-6, method='L-BFGS-B')
         else:
             if len(start)==2:
                 start=np.array([0.1,0.1, 0.98])
-            result=minimize(self.loss, start,  bounds=((0,1),(0,1), (0,1)), tol=1e-6, method='L-BFGS-B')   
+            result=minimize(self.loss, start,  bounds=((0,1),(0,1), (0,1)), tol=1e-6, method='L-BFGS-B')
             self.phi=float(result.x[2])
         self.alpha=float(result.x[0])
         self.beta=float(result.x[1])
@@ -154,7 +154,7 @@ class holt:
         self.se=np.sqrt(np.diag((1/self.n)*result.hess_inv.todense()))
         self.fitted=self.smooth()
         self.resid=self.y-self.fitted
-         
+
     def forecast(self, h):
         if self.damped:
             l, b= holtsmooth(self.y, self.alpha, self.beta, self.phi)
@@ -177,11 +177,11 @@ class holt:
             result[i]=var
             if self.damped:
                 aux+=(self.phi**(1+i))*(self.beta)
-            else: 
+            else:
                 aux+=self.beta
             var+=np.power(self.alpha*aux,2)*sigma2
         return result
-        
+
     def intervalforecast(self, h, level=.95):
         sigma2=self.sigma2
         crit=stats.norm.ppf(1-(1-level)/2)
@@ -201,7 +201,7 @@ class holt:
             bic=-2*loglik+np.log(N)*3
         if self.damped:
             print(' Holt exponential smoothing (damped trend)\n')
-        else: 
+        else:
             print(' Holt (trend corrected) exponential smoothing\n')
         print(' Smoothing parameters: ')
         print(' alpha (level) {0:.3f} ({1:.3f})'.format(self.alpha, self.se[0]))
@@ -212,7 +212,7 @@ class holt:
         print(' MSE               {0:.3f}'.format(mse))
         if loglik>0:
             print(' Log-likelihood    {0:.3f}'.format(loglik))
-        else: 
+        else:
             print(' Log-likelihood   {0:.3f}'.format(loglik))
         print(' AIC               {0:.3f}'.format(aic))
         print(' BIC               {0:.3f}'.format(bic))
@@ -260,7 +260,7 @@ class holtwinters:
         self.additive=additive
         self.damped=damped
         self.m=12
-    
+
     def smooth(self):
         if self.damped:
             if self.additive:
@@ -299,11 +299,11 @@ class holtwinters:
 
     def fit(self, start=np.array([0.1,0.1, 0.05])):
         if self.damped==False:
-            result=minimize(self.loss, start,  bounds=((0,1),(0,1),(0,1)), tol=1e-6, method='L-BFGS-B') 
+            result=minimize(self.loss, start,  bounds=((0,1),(0,1),(0,1)), tol=1e-6, method='L-BFGS-B')
         else:
             if len(start)==3:
                 start=np.array([0.1, 0.1, 0.05, 0.98])
-            result=minimize(self.loss, start,  bounds=((0,1),(0,1),(0,1),(0,1)), tol=1e-6, method='L-BFGS-B')   
+            result=minimize(self.loss, start,  bounds=((0,1),(0,1),(0,1),(0,1)), tol=1e-6, method='L-BFGS-B')
             self.phi=float(result.x[3])
         self.alpha=float(result.x[0])
         self.beta=float(result.x[1])
@@ -313,7 +313,7 @@ class holtwinters:
         self.se=np.sqrt(np.diag((1/self.n)*result.hess_inv.todense()))
         self.fitted=self.smooth()
         self.resid=self.y-self.fitted
-         
+
     def forecast(self, h):
         if self.damped:
             if self.additive:
@@ -351,14 +351,14 @@ class holtwinters:
             result[i]=var
             if self.damped:
                 aux+=self.alpha*(self.phi**(1+i))*(self.beta)
-            else: 
+            else:
                 aux+=self.alpha*self.beta
             if (i>0) and (i%self.m==0):
                 var+=np.power(aux+self.delta*(1-self.alpha),2)*sigma2
             else:
                 var+=np.power(aux,2)*sigma2
         return result
-        
+
     def intervalforecast(self, h, level=.95):
         sigma2=self.sigma2
         crit=stats.norm.ppf(1-(1-level)/2)
@@ -381,7 +381,7 @@ class holtwinters:
                 print(' Additive Holt-winters exponential smoothing (damped trend)\n')
             else:
                 print(' Multiplicative Holt-winters exponential smoothing (damped trend)\n')
-        else: 
+        else:
             if self.additive:
                 print(' Additive Holt-winters exponential smoothing\n')
             else:
@@ -396,7 +396,7 @@ class holtwinters:
         print(' MSE               {0:.3f}'.format(mse))
         if loglik>0:
             print(' Log-likelihood    {0:.3f}'.format(loglik))
-        else: 
+        else:
             print(' Log-likelihood   {0:.3f}'.format(loglik))
         print(' AIC               {0:.3f}'.format(aic))
         print(' BIC               {0:.3f}'.format(bic))
@@ -423,9 +423,9 @@ def fanchart(y, forecast, intv1, intv2, intv3):
         ax.set_ylim(hold)
     return fig, ax
 
-    
+
 def sarimaforecast(y, model, h=1, m=12):
-    
+
     n=len(y)
     x=np.zeros((n+h))
     x[:n]=y
@@ -434,10 +434,5 @@ def sarimaforecast(y, model, h=1, m=12):
 
     for i in range(h):
         x[n+i]=x[n+i-1]+x[n+i-m]-x[n+i-m-1]+forecast_diff[i]
-    
+
     return x[-h:]
-    
-
-
-    
-    
